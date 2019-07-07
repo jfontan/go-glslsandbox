@@ -3,13 +3,9 @@ package glsl
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/jinzhu/gorm"
 )
 
 type Effect struct {
-	gorm.Model
-
 	ID            uint `json:"_id" gorm:"primary_key"`
 	Created       time.Time
 	Modified      time.Time
@@ -29,11 +25,12 @@ type effectJSON struct {
 }
 
 type Version struct {
-	gorm.Model
+	ID       uint
+	EffectID uint
 
 	Number  int
 	Created time.Time
-	Code    string
+	Code    string `gorm:"type:text"`
 }
 
 type versionJSON struct {
