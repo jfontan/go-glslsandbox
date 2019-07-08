@@ -10,9 +10,9 @@ type Effect struct {
 	Created       time.Time
 	Modified      time.Time
 	Parent        *Effect
-	ParentID      uint `json:"parent" sql:"default:null"`
-	ParentVersion int  `json:"parent_version"`
-	User          string
+	ParentID      uint   `json:"parent" sql:"default:null"`
+	ParentVersion int    `json:"parent_version"`
+	User          string `json:"user,omitempty"`
 	Versions      []Version
 }
 

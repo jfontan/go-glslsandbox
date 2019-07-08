@@ -29,7 +29,7 @@ func main() {
 }
 
 func prepareDB() (*gorm.DB, error) {
-	db, err := gorm.Open("sqlite3", "test.db")
+	db, err := gorm.Open("sqlite3", "effects.db")
 	if err != nil {
 		return nil, err
 	}
@@ -51,22 +51,36 @@ func importEffects(db *gorm.DB, file string) error {
 		return err
 	}
 
+	bufSize := 64 * 1024 * 1024
+	buf := make([]byte, bufSize)
+
+	db.Begin()
+
 	scanner := bufio.NewScanner(f)
+	scanner.Buffer(buf, len(buf))
 	for scanner.Scan() {
 		line := []byte(scanner.Text())
 
 		effect, err := glsl.LoadEffect(line)
 		if err != nil {
-			return err
+			println("cannot unmarshal", err.Error())
+			continue
 		}
 
-		db.Save(effect)
+		if effect.ID%100 == 0 {
+			println("id", effect.ID, effect.User, len(line))
+		}
+
+		db.Create(effect)
 
 		errs := db.GetErrors()
 		if len(errs) != 0 {
+			println("error", effect.ID, err.Error())
 			return errs[0]
 		}
 	}
+
+	db.Commit()
 
 	return nil
 }
