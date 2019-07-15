@@ -2,6 +2,7 @@ package glsl
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
@@ -34,7 +36,11 @@ func (s *Server) Start() {
 	r := chi.NewRouter()
 
 	r.Get("/", s.gallery)
+	r.Get("/e", s.editor)
 	r.Get("/images/{id:[0-9]+}.png", s.image)
+	r.Get("/js/{name:[a-z]+\\.js}", s.js)
+	r.Get("/css/{name:[a-z]+\\.(css|png)}", s.css)
+	r.Get("/item/{effect:[0-9]+}.{version:[0-9]+}", s.item)
 
 	http.ListenAndServe(":3000", r)
 }
@@ -124,6 +130,110 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
 	io.Copy(w, f)
+}
+
+func (s *Server) css(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	println("css", name)
+
+	path := fmt.Sprintf("assets/css/%v", name)
+	f, err := os.Open(path)
+	if err != nil {
+		log.Errorf(err, "cannot load asset %v", path)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer f.Close()
+
+	if strings.HasSuffix(name, ".png") {
+		w.Header().Set("Content-Type", "application/png")
+	} else {
+		w.Header().Set("Content-Type", "text/css")
+	}
+	io.Copy(w, f)
+}
+
+func (s *Server) js(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "name")
+	println("js", name)
+
+	path := fmt.Sprintf("assets/js/%v", name)
+	f, err := os.Open(path)
+	if err != nil {
+		log.Errorf(err, "cannot load asset %v", path)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Type", "text/javascript")
+	io.Copy(w, f)
+}
+
+func (s *Server) editor(w http.ResponseWriter, r *http.Request) {
+	path := "assets/editor.html"
+	f, err := os.Open(path)
+	if err != nil {
+		log.Errorf(err, "cannot load asset %v", path)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Type", "text/html")
+	io.Copy(w, f)
+}
+
+type item struct {
+	Code   string `json:"code"`
+	User   string `json:"user"`
+	Parent string `json:"parent"`
+}
+
+func (s *Server) item(w http.ResponseWriter, r *http.Request) {
+	effectText := chi.URLParam(r, "effect")
+	versionText := chi.URLParam(r, "version")
+	effectID, _ := strconv.Atoi(effectText)
+	versionID, _ := strconv.Atoi(versionText)
+
+	println("item", effectID, versionID)
+
+	var effect Effect
+	db := s.db.Preload("Versions").Find(&effect, effectID)
+	// db := s.db.Where(&Version{Number: versionID, EffectID: uint(effectID)}).
+	// 	First(&version)
+
+	var err error
+	errs := db.GetErrors()
+	for _, err = range errs {
+		log.Errorf(err, "cannot load item %v.%v", effectID, versionID)
+	}
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+
+	if versionID >= len(effect.Versions) {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	i := item{
+		Code:   effect.Versions[versionID].Code,
+		User:   effect.User,
+		Parent: strconv.Itoa(int(effect.ParentID)),
+	}
+
+	m, err := json.Marshal(i)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	println("item", string(m))
+	w.Write(m)
 }
 
 type Gallery struct {
