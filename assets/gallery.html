@@ -81,25 +81,19 @@ gallery by <a href="http://twitter.com/thevaw">@thevaw</a> and <a href="http://t
 
 <div id="gallery">
 
-  {{range .}}
+  {{range .Effects}}
   <a href='/e#{{.ID}}.{{.LastVersion}}'><img src='/images/{{.ID}}.png'></a>
   {{end}}
 
 </div>
 
 <div id="paginate">
-<% if previous_page %>
-<a href='/?page=<%= previous_page %>'>Previous page</a>
+  {{ if .HasPreviousPage }}
+  <a href='/?page={{.PreviousPage}}'>Previous page</a>
+  &nbsp;&nbsp;
+  {{ end }}
 
-<% if next_page %>
-&nbsp;&nbsp;
-<% end %>
-
-<% end %>
-
-<% if next_page %>
-<a href='/?page=<%= next_page %>'>Next page</a>
-<% end %>
+  <a href='/?page={{.NextPage}}'>Next page</a>
 </div>
 
 </body>

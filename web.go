@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
@@ -16,6 +17,7 @@ import (
 
 const (
 	galleryPath = "assets/gallery.html"
+	perPage     = 40
 )
 
 type Server struct {
@@ -30,9 +32,7 @@ func NewServer(db *gorm.DB) *Server {
 
 func (s *Server) Start() {
 	r := chi.NewRouter()
-	// r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	w.Write([]byte("welcome"))
-	// })
+
 	r.Get("/", s.gallery)
 	r.Get("/images/{id:[0-9]+}.png", s.image)
 
@@ -69,8 +69,20 @@ func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var effects []Effect
-	db := s.db.Order("modified desc").Limit(40).Preload("Versions").Find(&effects)
+	page := 0
+	if p, ok := r.URL.Query()["page"]; ok && len(p) == 1 {
+		page, err = strconv.Atoi(p[0])
+		if err != nil {
+			log.Errorf(err, "invalid page: %v", p)
+			page = 0
+		}
+	}
+
+	gallery := Gallery{
+		Page: page,
+	}
+	db := s.db.Order("modified desc").Limit(perPage).Offset(page * perPage).
+		Preload("Versions").Find(&gallery.Effects)
 
 	errors := db.GetErrors()
 	for _, err = range errors {
@@ -82,7 +94,7 @@ func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, effects)
+	err = tmpl.Execute(buf, gallery)
 	if err != nil {
 		log.Errorf(err, "cannot render template %v", galleryPath)
 		http.Error(w, http.StatusText(500), 500)
@@ -112,4 +124,20 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
 	io.Copy(w, f)
+}
+
+type Gallery struct {
+	Page    int
+	Effects []Effect
+}
+
+func (g Gallery) HasPreviousPage() bool {
+	return g.Page > 0
+}
+func (g Gallery) PreviousPage() int {
+	return g.Page - 1
+}
+
+func (g Gallery) NextPage() int {
+	return g.Page + 1
 }
