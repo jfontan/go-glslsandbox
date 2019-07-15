@@ -5,6 +5,7 @@ go 1.12
 require (
 	cloud.google.com/go v0.41.0 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190707035753-2be1aa521ff4 // indirect
+	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/jessevdk/go-flags v1.4.0 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d // indirect
@@ -22,5 +23,5 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
-	gopkg.in/src-d/go-log.v1 v1.0.2 // indirect
+	gopkg.in/src-d/go-log.v1 v1.0.2
 )

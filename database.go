@@ -16,6 +16,15 @@ type Effect struct {
 	Versions      []Version
 }
 
+func (e *Effect) LastVersion() int {
+	if len(e.Versions) == 0 {
+		println("no versions")
+		return 0
+	}
+
+	return len(e.Versions) - 1
+}
+
 type effectJSON struct {
 	Effect
 
