@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/jinzhu/gorm"
@@ -40,6 +41,7 @@ func (s *Server) Start() {
 	r.Get("/images/{id:[0-9]+}.png", s.image)
 	r.Get("/js/{name:[a-z]+\\.js}", s.js)
 	r.Get("/css/{name:[a-z]+\\.(css|png)}", s.css)
+	r.Get("/item/{effect:[0-9]+}", s.item)
 	r.Get("/item/{effect:[0-9]+}.{version:[0-9]+}", s.item)
 
 	http.ListenAndServe(":3000", r)
@@ -84,11 +86,17 @@ func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	start := time.Now()
+
 	gallery := Gallery{
 		Page: page,
 	}
 	db := s.db.Order("modified desc").Limit(perPage).Offset(page * perPage).
 		Preload("Versions").Find(&gallery.Effects)
+
+	log.With(log.Fields{
+		"duration": time.Since(start),
+	}).Infof("database queried")
 
 	errors := db.GetErrors()
 	for _, err = range errors {
@@ -192,9 +200,13 @@ type item struct {
 
 func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 	effectText := chi.URLParam(r, "effect")
-	versionText := chi.URLParam(r, "version")
 	effectID, _ := strconv.Atoi(effectText)
-	versionID, _ := strconv.Atoi(versionText)
+
+	versionID := -1
+	versionText := chi.URLParam(r, "version")
+	if versionText != "" {
+		versionID, _ = strconv.Atoi(versionText)
+	}
 
 	println("item", effectID, versionID)
 
@@ -217,8 +229,9 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
+	if versionID < 0 {
+		versionID = len(effect.Versions) - 1
+	}
 
 	i := item{
 		Code:   effect.Versions[versionID].Code,

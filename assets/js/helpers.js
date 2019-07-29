@@ -56,7 +56,7 @@ function add_server_buttons() {
 	parentButton = document.createElement( 'a' );
 	parentButton.style.visibility = 'hidden';
 	parentButton.textContent = 'parent';
-	parentButton.href = original_version;
+	parentButton.href = '/item/' + original_version;
 	toolbar.appendChild( parentButton );
 
 	diffButton = document.createElement( 'a' );
@@ -146,7 +146,7 @@ function load_code(hash) {
 
 		if(result['parent']) {
 			original_version=result['parent'];
-			parentButton.href = original_version;
+			parentButton.href = '/e#' + original_version;
 			diffButton.href = 'diff#' + original_version.substring(3) + '-vs-' + hash;
 			set_parent_button('visible');
 		} else {
