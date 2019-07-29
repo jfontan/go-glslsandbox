@@ -8,7 +8,7 @@ import (
 type Effect struct {
 	ID            uint `json:"_id" gorm:"primary_key"`
 	Created       time.Time
-	Modified      time.Time
+	Modified      time.Time `gorm:"index:modified"`
 	Parent        *Effect
 	ParentID      uint   `json:"parent" sql:"default:null"`
 	ParentVersion int    `json:"parent_version"`
@@ -35,7 +35,7 @@ type effectJSON struct {
 
 type Version struct {
 	ID       uint
-	EffectID uint
+	EffectID uint `gorm:"index:effect_id"`
 
 	Number  int
 	Created time.Time
