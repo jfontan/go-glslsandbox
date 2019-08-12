@@ -147,7 +147,7 @@ function load_code(hash) {
 		if(result['parent']) {
 			original_version=result['parent'];
 			parentButton.href = '/e#' + original_version;
-			diffButton.href = 'diff#' + original_version.substring(3) + '-vs-' + hash;
+			diffButton.href = 'diff#' + original_version + '-vs-' + hash;
 			set_parent_button('visible');
 		} else {
 			original_version='';

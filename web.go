@@ -38,6 +38,7 @@ func (s *Server) Start() {
 
 	r.Get("/", s.gallery)
 	r.Get("/e", s.editor)
+	r.Get("/diff", s.diff)
 	r.Get("/images/{id:[0-9]+}.png", s.image)
 	r.Get("/js/{name:[a-z]+\\.js}", s.js)
 	r.Get("/css/{name:[a-z]+\\.(css|png)}", s.css)
@@ -192,6 +193,20 @@ func (s *Server) editor(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, f)
 }
 
+func (s *Server) diff(w http.ResponseWriter, r *http.Request) {
+	path := "assets/diff.html"
+	f, err := os.Open(path)
+	if err != nil {
+		log.Errorf(err, "cannot load asset %v", path)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Type", "text/html")
+	io.Copy(w, f)
+}
+
 type item struct {
 	Code   string `json:"code"`
 	User   string `json:"user"`
@@ -212,8 +227,6 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 
 	var effect Effect
 	db := s.db.Preload("Versions").Find(&effect, effectID)
-	// db := s.db.Where(&Version{Number: versionID, EffectID: uint(effectID)}).
-	// 	First(&version)
 
 	var err error
 	errs := db.GetErrors()
@@ -233,10 +246,17 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 		versionID = len(effect.Versions) - 1
 	}
 
+	parent := fmt.Sprintf("%v.%v", effect.ParentID, effect.ParentVersion)
+	// ParentID can be null but uint cannot. Use the default values to detect
+	// orphan effects.
+	if parent == "0.0" {
+		parent = ""
+	}
+
 	i := item{
 		Code:   effect.Versions[versionID].Code,
 		User:   effect.User,
-		Parent: strconv.Itoa(int(effect.ParentID)),
+		Parent: parent,
 	}
 
 	m, err := json.Marshal(i)
