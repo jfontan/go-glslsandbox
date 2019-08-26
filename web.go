@@ -2,6 +2,7 @@ package glsl
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ import (
 )
 
 const (
+	imagesDir   = "images"
 	galleryPath = "assets/gallery.html"
 	perPage     = 40
 )
@@ -38,6 +41,7 @@ func (s *Server) Start() {
 
 	r.Get("/", s.gallery)
 	r.Get("/e", s.editor)
+	r.Post("/e", s.save)
 	r.Get("/diff", s.diff)
 	r.Get("/images/{id:[0-9]+}.png", s.image)
 	r.Get("/js/{name:[a-z]+\\.js}", s.js)
@@ -126,24 +130,27 @@ func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	println("id", id)
 
-	name := fmt.Sprintf("images/%v.png", id)
+	name := filepath.Join(imagesDir, fmt.Sprintf("%v.png", id))
 	f, err := os.Open(name)
 	if err != nil {
-		log.Errorf(err, "cannot load image %v", galleryPath)
+		log.Errorf(err, "cannot load image %v", name)
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
 	defer f.Close()
 
 	w.Header().Set("Content-Type", "image/png")
-	io.Copy(w, f)
+	_, err = io.Copy(w, f)
+	if err != nil {
+		log.Errorf(err, "cannot write image %v", name)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 func (s *Server) css(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	println("css", name)
 
 	path := fmt.Sprintf("assets/css/%v", name)
 	f, err := os.Open(path)
@@ -159,12 +166,17 @@ func (s *Server) css(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Header().Set("Content-Type", "text/css")
 	}
-	io.Copy(w, f)
+
+	_, err = io.Copy(w, f)
+	if err != nil {
+		log.Errorf(err, "cannot write asset %v", path)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 func (s *Server) js(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	println("js", name)
 
 	path := fmt.Sprintf("assets/js/%v", name)
 	f, err := os.Open(path)
@@ -191,6 +203,176 @@ func (s *Server) editor(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	io.Copy(w, f)
+}
+
+type saveCode struct {
+	CodeID        string `json:"code_id,omiempty"`
+	Code          string `json:"code"`
+	Image         string `json:"image"`
+	User          string `json:"user"`
+	Parent        string `json:"parent,omiempty"`
+	ParentVersion string `json:"parent_version,omiempty"`
+}
+
+func (s *Server) save(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("saving effect %P", r)
+	// reader, err := r.GetBody()
+	// if err != nil {
+	// 	log.Errorf(err, "cannot get body")
+	// 	http.Error(w, http.StatusText(500), 500)
+	// 	return
+	// }
+	// defer reader.Close()
+
+	data := &saveCode{}
+	buffer, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Errorf(err, "cannot read body")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	println("read body", len(buffer))
+
+	err = json.Unmarshal(buffer, data)
+	if err != nil {
+		log.Errorf(err, "cannot unmarshal json")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	println("after unmarshal")
+
+	parent, err := strconv.Atoi(data.Parent)
+	if err != nil {
+		parent = 0
+	}
+
+	println("atoi 1")
+
+	parentVersion, err := strconv.Atoi(data.ParentVersion)
+	if err != nil {
+		parentVersion = 0
+	}
+
+	println("atoi 2")
+
+	var effect *Effect
+	var id int
+	if data.CodeID != "" {
+		split := strings.Split(data.CodeID, ".")
+		id, err := strconv.Atoi(split[0])
+		if err != nil {
+			println("bad atoi")
+			log.Errorf(err, "malformed code idetifier %s", data.CodeID)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		println("before get effect")
+
+		effect, err = GetEffect(s.db, id)
+		if err != nil && !gorm.IsRecordNotFoundError(err) {
+			log.Errorf(err, "could not retrieve code %v", id)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+
+		println("after get effect")
+	}
+
+	if effect != nil {
+		// check if the owner is saving
+		if effect.User == data.User {
+			tmp := *effect
+			tmp.Versions = nil
+			tmp.Modified = time.Now()
+			err = s.db.Save(&tmp).Error
+			if err != nil {
+				log.Errorf(err, "could not update code %v", id)
+				http.Error(w, http.StatusText(500), 500)
+				return
+			}
+		} else {
+			parent = id
+			parentVersion = effect.LastVersion()
+			effect = nil
+		}
+	}
+
+	// create new record for new effects
+	if effect == nil {
+		println("saving new effect")
+		effect = &Effect{
+			Created:       time.Now(),
+			Modified:      time.Now(),
+			ParentID:      uint(parent),
+			ParentVersion: parentVersion,
+			User:          data.User,
+		}
+
+		err = s.db.Create(effect).Error
+		if err != nil {
+			log.Errorf(err, "could not create code %v", id)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+	}
+
+	id = int(effect.ID)
+
+	log.Debugf("saved effect %v", effect.ID)
+	println("log does not work")
+
+	// TODO: add version
+
+	version := &Version{
+		EffectID: effect.ID,
+		Number:   effect.NextVersion(),
+		Created:  time.Now(),
+		Code:     data.Code,
+	}
+	err = s.db.Create(version).Error
+	if err != nil {
+		log.Errorf(err, "could not create version %v", id)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	imageName := fmt.Sprintf("%v.png", id)
+	imagePath := filepath.Join("images", imageName)
+	f, err := os.Create(imagePath)
+	if err != nil {
+		log.Errorf(err, "could not create image %v", id)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer f.Close()
+
+	base := strings.Split(data.Image, ",")
+	if len(base) == 0 {
+		log.Errorf(err, "invalid image %v", id)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(base[len(base)-1])
+	if err != nil {
+		log.Errorf(err, "invalid image %v", id)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	_, err = f.Write(decoded)
+	if err != nil {
+		log.Errorf(err, "could not save image %v", id)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	println("saved")
+	fmt.Fprintf(w, "%v.%v", effect.ID, version.Number)
+	// fmt.Fprintf(w, "%v", effect.ID)
 }
 
 func (s *Server) diff(w http.ResponseWriter, r *http.Request) {
@@ -223,16 +405,7 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 		versionID, _ = strconv.Atoi(versionText)
 	}
 
-	println("item", effectID, versionID)
-
-	var effect Effect
-	db := s.db.Preload("Versions").Find(&effect, effectID)
-
-	var err error
-	errs := db.GetErrors()
-	for _, err = range errs {
-		log.Errorf(err, "cannot load item %v.%v", effectID, versionID)
-	}
+	effect, err := GetEffect(s.db, effectID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
@@ -265,8 +438,11 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	println("item", string(m))
-	w.Write(m)
+	_, err = w.Write(m)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 type Gallery struct {

@@ -3,6 +3,9 @@ package glsl
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	"gopkg.in/src-d/go-log.v1"
 )
 
 type Effect struct {
@@ -23,6 +26,10 @@ func (e *Effect) LastVersion() int {
 	}
 
 	return len(e.Versions) - 1
+}
+
+func (e *Effect) NextVersion() int {
+	return len(e.Versions)
 }
 
 type effectJSON struct {
@@ -78,4 +85,20 @@ func LoadEffect(text []byte) (*Effect, error) {
 	effect.convert()
 
 	return &effect.Effect, nil
+}
+
+func GetEffect(db *gorm.DB, id int) (*Effect, error) {
+	var effect Effect
+	db = db.Preload("Versions").Find(&effect, id)
+
+	var err error
+	errs := db.GetErrors()
+	for _, err = range errs {
+		log.Errorf(err, "cannot load item %v", id)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &effect, nil
 }
