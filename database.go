@@ -122,7 +122,7 @@ func (d *Database) Effects(page, size int) ([]Effect, error) {
 }
 
 func (d *Database) UpdateTime(e *Effect) error {
-	err := d.DB.Model(e).Update("modified_at", time.Now()).Error
+	err := d.DB.Model(e).Update("modified", time.Now()).Error
 	if err != nil {
 		log.Errorf(err, "cannot update effect time")
 		return err
