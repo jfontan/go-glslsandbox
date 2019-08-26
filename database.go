@@ -87,18 +87,67 @@ func LoadEffect(text []byte) (*Effect, error) {
 	return &effect.Effect, nil
 }
 
-func GetEffect(db *gorm.DB, id int) (*Effect, error) {
-	var effect Effect
-	db = db.Preload("Versions").Find(&effect, id)
+type Database struct {
+	*gorm.DB
+}
 
-	var err error
-	errs := db.GetErrors()
-	for _, err = range errs {
-		log.Errorf(err, "cannot load item %v", id)
-	}
+func NewDatabase(db *gorm.DB) *Database {
+	return &Database{DB: db}
+}
+
+func (d *Database) Effect(id int) (*Effect, error) {
+	var effect Effect
+	db := d.Preload("Versions").Find(&effect, id)
+
+	err := db.Error
 	if err != nil {
+		log.Errorf(err, "cannot retrieve effect%v", id)
 		return nil, err
 	}
 
 	return &effect, nil
+}
+
+func (d *Database) Effects(page, size int) ([]Effect, error) {
+	var effects []Effect
+	db := d.Order("modified desc").Limit(perPage).Offset(page * perPage).
+		Preload("Versions").Find(&effects)
+	err := db.Error
+	if err != nil {
+		log.Errorf(err, "cannot retrieve effects")
+		return nil, err
+	}
+
+	return effects, nil
+}
+
+func (d *Database) UpdateTime(e *Effect) error {
+	err := d.DB.Model(e).Update("modified_at", time.Now()).Error
+	if err != nil {
+		log.Errorf(err, "cannot update effect time")
+		return err
+	}
+
+	return nil
+}
+
+func (d *Database) NewEffect(
+	parent, version int,
+	user string,
+) (*Effect, error) {
+	effect := &Effect{
+		Created:       time.Now(),
+		Modified:      time.Now(),
+		ParentID:      uint(parent),
+		ParentVersion: version,
+		User:          user,
+	}
+
+	err := d.Create(effect).Error
+	if err != nil {
+		log.Errorf(err, "cannot create effect")
+		return nil, err
+	}
+
+	return effect, nil
 }

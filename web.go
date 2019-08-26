@@ -27,12 +27,12 @@ const (
 )
 
 type Server struct {
-	db *gorm.DB
+	db *Database
 }
 
 func NewServer(db *gorm.DB) *Server {
 	return &Server{
-		db: db,
+		db: NewDatabase(db),
 	}
 }
 
@@ -96,21 +96,16 @@ func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
 	gallery := Gallery{
 		Page: page,
 	}
-	db := s.db.Order("modified desc").Limit(perPage).Offset(page * perPage).
-		Preload("Versions").Find(&gallery.Effects)
 
-	log.With(log.Fields{
-		"duration": time.Since(start),
-	}).Infof("database queried")
-
-	errors := db.GetErrors()
-	for _, err = range errors {
-		log.Errorf(err, "error querying database")
-	}
+	gallery.Effects, err = s.db.Effects(page, perPage)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
+
+	log.With(log.Fields{
+		"duration": time.Since(start),
+	}).Infof("database queried")
 
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, gallery)
@@ -216,13 +211,6 @@ type saveCode struct {
 
 func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("saving effect %P", r)
-	// reader, err := r.GetBody()
-	// if err != nil {
-	// 	log.Errorf(err, "cannot get body")
-	// 	http.Error(w, http.StatusText(500), 500)
-	// 	return
-	// }
-	// defer reader.Close()
 
 	data := &saveCode{}
 	buffer, err := ioutil.ReadAll(r.Body)
@@ -232,8 +220,6 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	println("read body", len(buffer))
-
 	err = json.Unmarshal(buffer, data)
 	if err != nil {
 		log.Errorf(err, "cannot unmarshal json")
@@ -241,21 +227,15 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	println("after unmarshal")
-
 	parent, err := strconv.Atoi(data.Parent)
 	if err != nil {
 		parent = 0
 	}
 
-	println("atoi 1")
-
 	parentVersion, err := strconv.Atoi(data.ParentVersion)
 	if err != nil {
 		parentVersion = 0
 	}
-
-	println("atoi 2")
 
 	var effect *Effect
 	var id int
@@ -263,31 +243,23 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 		split := strings.Split(data.CodeID, ".")
 		id, err := strconv.Atoi(split[0])
 		if err != nil {
-			println("bad atoi")
 			log.Errorf(err, "malformed code idetifier %s", data.CodeID)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
 
-		println("before get effect")
-
-		effect, err = GetEffect(s.db, id)
+		effect, err = s.db.Effect(id)
 		if err != nil && !gorm.IsRecordNotFoundError(err) {
 			log.Errorf(err, "could not retrieve code %v", id)
 			http.Error(w, http.StatusText(500), 500)
 			return
 		}
-
-		println("after get effect")
 	}
 
 	if effect != nil {
 		// check if the owner is saving
 		if effect.User == data.User {
-			tmp := *effect
-			tmp.Versions = nil
-			tmp.Modified = time.Now()
-			err = s.db.Save(&tmp).Error
+			err = s.db.UpdateTime(effect)
 			if err != nil {
 				log.Errorf(err, "could not update code %v", id)
 				http.Error(w, http.StatusText(500), 500)
@@ -302,16 +274,7 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 
 	// create new record for new effects
 	if effect == nil {
-		println("saving new effect")
-		effect = &Effect{
-			Created:       time.Now(),
-			Modified:      time.Now(),
-			ParentID:      uint(parent),
-			ParentVersion: parentVersion,
-			User:          data.User,
-		}
-
-		err = s.db.Create(effect).Error
+		effect, err = s.db.NewEffect(parent, parentVersion, data.User)
 		if err != nil {
 			log.Errorf(err, "could not create code %v", id)
 			http.Error(w, http.StatusText(500), 500)
@@ -322,7 +285,6 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 	id = int(effect.ID)
 
 	log.Debugf("saved effect %v", effect.ID)
-	println("log does not work")
 
 	// TODO: add version
 
@@ -370,9 +332,7 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	println("saved")
 	fmt.Fprintf(w, "%v.%v", effect.ID, version.Number)
-	// fmt.Fprintf(w, "%v", effect.ID)
 }
 
 func (s *Server) diff(w http.ResponseWriter, r *http.Request) {
@@ -405,7 +365,7 @@ func (s *Server) item(w http.ResponseWriter, r *http.Request) {
 		versionID, _ = strconv.Atoi(versionText)
 	}
 
-	effect, err := GetEffect(s.db, effectID)
+	effect, err := s.db.Effect(effectID)
 	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 		return
