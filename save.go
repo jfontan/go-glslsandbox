@@ -71,46 +71,55 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v.%v", effect.ID, version.Number)
 }
 
-func createOrUpdateEffect(db *Database, data saveCode) (*Effect, error) {
-	parent, err := strconv.Atoi(data.Parent)
-	if err != nil {
-		parent = 0
-	}
-
-	parentVersion, err := strconv.Atoi(data.ParentVersion)
-	if err != nil {
-		parentVersion = 0
-	}
-
-	var effect *Effect
-	var id int
-	if data.CodeID != "" {
-		split := strings.Split(data.CodeID, ".")
+func splitIDVersion(s string) (int, int) {
+	if s != "" {
+		split := strings.Split(s, ".")
 		id, err := strconv.Atoi(split[0])
 		if err != nil {
-			log.Errorf(err, "malformed code idetifier %s", data.CodeID)
-			return nil, err
+			return 0, 0
 		}
 
-		effect, err = db.Effect(id)
+		var version int
+		if len(split) > 1 {
+			version, _ = strconv.Atoi(split[1])
+		}
+
+		return id, version
+	}
+
+	return 0, 0
+}
+
+func createOrUpdateEffect(db *Database, data saveCode) (*Effect, error) {
+	parent, parentVersion := splitIDVersion(data.Parent)
+
+	var (
+		err         error
+		effect      *Effect
+		codeID      int
+		codeVersion int
+	)
+	if data.CodeID != "" {
+		codeID, codeVersion = splitIDVersion(data.CodeID)
+
+		effect, err = db.Effect(codeID)
 		if err != nil && !gorm.IsRecordNotFoundError(err) {
-			log.Errorf(err, "could not retrieve code %v", id)
+			log.Errorf(err, "could not retrieve code %v", codeID)
 			return nil, err
 		}
 	}
 
-	// no code or effect not found
+	// check if the owner is saving
 	if effect != nil {
-		// check if the owner is saving
 		if effect.User == data.User {
 			err = db.UpdateTime(effect)
 			if err != nil {
-				log.Errorf(err, "could not update code %v", id)
+				log.Errorf(err, "could not update code %v", codeID)
 				return nil, err
 			}
 		} else {
-			parent = id
-			parentVersion = effect.LastVersion()
+			parent = codeID
+			parentVersion = codeVersion
 			effect = nil
 		}
 	}
@@ -119,7 +128,7 @@ func createOrUpdateEffect(db *Database, data saveCode) (*Effect, error) {
 	if effect == nil {
 		effect, err = db.NewEffect(parent, parentVersion, data.User)
 		if err != nil {
-			log.Errorf(err, "could not create code %v", id)
+			log.Errorf(err, "could not create code %v", codeID)
 			return nil, err
 		}
 	}

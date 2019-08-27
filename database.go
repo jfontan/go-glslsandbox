@@ -13,7 +13,7 @@ type Effect struct {
 	Created       time.Time
 	Modified      time.Time `gorm:"index:modified"`
 	Parent        *Effect
-	ParentID      uint   `json:"parent" sql:"default:null"`
+	ParentID      uint   `json:"parent" sql:"parent_id:null"`
 	ParentVersion int    `json:"parent_version"`
 	User          string `json:"user,omitempty"`
 	Versions      []Version
