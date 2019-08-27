@@ -20,7 +20,7 @@ func (i *serverCommand) Execute(args []string) error {
 	}
 	defer db.Close()
 
-	server := glsl.NewServer(db)
+	server := glsl.NewServer(db, true)
 	server.Start()
 	return nil
 }

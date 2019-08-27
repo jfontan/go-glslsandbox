@@ -21,17 +21,19 @@ import (
 
 const (
 	imagesDir   = "images"
-	galleryPath = "assets/gallery.html"
+	galleryPath = "/assets/gallery.html"
 	perPage     = 40
 )
 
 type Server struct {
 	db *Database
+	fs http.FileSystem
 }
 
-func NewServer(db *gorm.DB) *Server {
+func NewServer(db *gorm.DB, local bool) *Server {
 	return &Server{
 		db: NewDatabase(db),
+		fs: FS(local),
 	}
 }
 
@@ -48,11 +50,14 @@ func (s *Server) Start() {
 	r.Get("/item/{effect:[0-9]+}", s.item)
 	r.Get("/item/{effect:[0-9]+}.{version:[0-9]+}", s.item)
 
-	http.ListenAndServe(":3000", r)
+	err := http.ListenAndServe(":3000", r)
+	if err != nil {
+		log.Errorf(err, "server error")
+	}
 }
 
-func loadTemplate(name string) (*template.Template, error) {
-	f, err := os.Open(name)
+func loadTemplate(fs http.FileSystem, name string) (*template.Template, error) {
+	f, err := fs.Open(name)
 	if err != nil {
 		log.Errorf(err, "cannot find asset %v", name)
 		return nil, err
@@ -75,7 +80,7 @@ func loadTemplate(name string) (*template.Template, error) {
 }
 
 func (s *Server) gallery(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := loadTemplate(galleryPath)
+	tmpl, err := loadTemplate(s.fs, galleryPath)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
@@ -146,8 +151,8 @@ func (s *Server) image(w http.ResponseWriter, r *http.Request) {
 func (s *Server) css(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
-	path := fmt.Sprintf("assets/css/%v", name)
-	f, err := os.Open(path)
+	path := fmt.Sprintf("/assets/css/%v", name)
+	f, err := s.fs.Open(path)
 	if err != nil {
 		log.Errorf(err, "cannot load asset %v", path)
 		http.Error(w, http.StatusText(500), 500)
@@ -172,8 +177,8 @@ func (s *Server) css(w http.ResponseWriter, r *http.Request) {
 func (s *Server) js(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
-	path := fmt.Sprintf("assets/js/%v", name)
-	f, err := os.Open(path)
+	path := fmt.Sprintf("/assets/js/%v", name)
+	f, err := s.fs.Open(path)
 	if err != nil {
 		log.Errorf(err, "cannot load asset %v", path)
 		http.Error(w, http.StatusText(500), 500)
@@ -186,8 +191,8 @@ func (s *Server) js(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) editor(w http.ResponseWriter, r *http.Request) {
-	path := "assets/editor.html"
-	f, err := os.Open(path)
+	path := "/assets/editor.html"
+	f, err := s.fs.Open(path)
 	if err != nil {
 		log.Errorf(err, "cannot load asset %v", path)
 		http.Error(w, http.StatusText(500), 500)
@@ -200,8 +205,8 @@ func (s *Server) editor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) diff(w http.ResponseWriter, r *http.Request) {
-	path := "assets/diff.html"
-	f, err := os.Open(path)
+	path := "/assets/diff.html"
+	f, err := s.fs.Open(path)
 	if err != nil {
 		log.Errorf(err, "cannot load asset %v", path)
 		http.Error(w, http.StatusText(500), 500)
