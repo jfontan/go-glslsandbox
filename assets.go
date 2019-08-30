@@ -213,7 +213,7 @@ var _escData = map[string]*_escFile{
 		name:    "codemirror.css",
 		local:   "assets/css/codemirror.css",
 		size:    2703,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/4xWUW+kNhB+Xn7FVFF1lyhs2G22qcxjVamVem/3VvXB4AFGa2xkm+wm0f73kw1LgCW5
 DUkEZvzN+Jv5Zlj/qQV+I2O0gbcIINdSGwaHihymEYDDo4ttxYU+MDBlxr9Cct//buAWkuYIm+YI2+bo
@@ -238,7 +238,7 @@ ysHaoC9tf4SVINtI/sIgkzrfp9FqqWJXmXZO131Yq77hdw99c9pswtPQ3LvH0QyhmpfIoDXy65fe/7pR
 		name:    "default.css",
 		local:   "assets/css/default.css",
 		size:    400,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/3TQQQoCMQwF0L2nGHA97gpFT5O0CZRpm7GTIiLeXWbVLsw2PD4//xbKeqyRGHrW5dih
 npeN3i9pcfkEydLuyxWRH9/Lf1x7QWrDMqJpI/GAztmhQUqhqgN7trHs1EBl6uDQmbqQwpzrTfnskBOn
@@ -250,7 +250,7 @@ npeN3i9pcfkEydLuyxWRH9/Lf1x7QWrDMqJpI/GAztmhQUqhqgN7trHs1EBl6uDQmbqQwpzrTfnskBOn
 		name:    "diffview.css",
 		local:   "assets/css/diffview.css",
 		size:    2644,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/5RV72/aOBj+jP+KV9uHbSiFdvdrhWm6kJhiKU0427Tjo0lM8TWJI9vQctP+95MDbJR2
 050qFct+fzzP8z6x+91uF/GVsqAsNMI40Ev42xZquSzVAjYXvfMefFw519hBv3+n3Gq96OW66ueykkbl
@@ -281,7 +281,7 @@ QdbnRgjD8Nv+WTvaZxN62kXVVhr3cp9LfHk6pZ5oP96T4Rw8tO/rJf8PvkBf/w0AAP//GElQiVQKAAA=
 		name:    "resizer.png",
 		local:   "assets/css/resizer.png",
 		size:    180,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/+oM8HPn5ZLiYmBg4PX0cAliYGDgBmEONgYGhpVrytUYGBgYi4PcnRjWnZN5ycDAwFng
 EVnMwMAtDMKMDLPmSDAwMLCXePq6st/mEWGytPyzeFckAwODm6eLY4jE5aXnHLkYFDhcLm7cfcbxVtXL
@@ -294,7 +294,7 @@ YGDwdPVzWeeU0AQIAAD//yciwCu0AAAA
 		name:    "diff.html",
 		local:   "assets/diff.html",
 		size:    5645,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/6xYW3PbuBV+Jn/FCb0bSWuJlGyn41CiZrJJ2rjjJJ3Y29m3DEgeibBJggFAyWpW/70D
 8E5JbnaneYgp4Hznjg+XxYuQBXKXIUQyiZfmovqDJFyaxiJBSSCICBcoPSuXq8m1VY9HUmYT/JbTjWf9
@@ -337,7 +337,7 @@ KuWXxYWr50adVZU4pb21LpbNSijFFk7REAunePX9bwAAAP//2H9uzA0WAAA=
 		name:    "editor.html",
 		local:   "assets/editor.html",
 		size:    24745,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/9x9e3Mbt+7o3/anQJSZrFSvJdltTlvb698otpx4jl/jR1PfTkZD7VISm9WuSlKy3cTf
 /Q6fy31Jcpp77plf/4glEgRAEARAEFQPXh1fHt3eX/Vhwqfx4eaB+AMxSsZBAyeNw82NgwlG0eHmxsYB
@@ -449,7 +449,7 @@ Fao05AXbVESYzrT3K1LK2T6uyA7z6azmp2UPOuoH2A866n9M8H8DAAD//2wiOE2pYAAA
 		name:    "gallery.html",
 		local:   "assets/gallery.html",
 		size:    2465,
-		modtime: 1566919105,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/5RWbW/bNhf9bP2KW+XB4xawJUtxs1SRVHeN1xYotgLthg3DPlDitUREIlWScuwJ/u8D
 9eIoaTJ3CSxdk/ecc1/IC4fPrn95++WPT2vIdVnEVmheUBCeRTZyO7YmYY6ExtZkEmqmC4zfffz8ET4T
@@ -476,7 +476,7 @@ Ru52tzt0ux9k/wQAAP//MHVuW6EJAAA=
 		name:    "codemirror.js",
 		local:   "assets/js/codemirror.js",
 		size:    109311,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/+z9+3PbRrI4iv98/Fe0+K2PTEQgRXlP9uyKplx+5cTftZPU2rvJKUd3CwJGIiIQwwOA
 khiZ//ut6Z5Hz2BAKdk993Nv3bu1FYuDmZ5XT09PP4+P4WVVweWmzrtS1i10y6yDWogCsjwXbQudhG4p
@@ -972,7 +972,7 @@ lHu6CBzo0FP3iKsXR7uJK8W/AgAA//8Zg186/6oBAA==
 		name:    "difflib.js",
 		local:   "assets/js/difflib.js",
 		size:    10789,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/7xaa3PaSJf+jH7FmdTWBGwZG89WbZUJniW2HGsLgxfk5E0xXqolNaZBSETd8mUz/u9b
 py9SC3Aqs7vv5IORuk+fy3MufbqV44ODAydYMA6Mw4bkArI5LHnM5vOEhfDYaZ+04cNCiA0/Oz5+YGJR
@@ -1042,7 +1042,7 @@ dB3rG135qcx87Kp9UFQfEbtO49V5df4nAAD//1LaipglKgAA
 		name:    "diffview.js",
 		local:   "assets/js/diffview.js",
 		size:    7978,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/7xZUXPbtpN/Fj/FVg+tZDOS43bmZuQoOVqiY87Ioo+kknrSzB1EQhZaClAByLLb5rvf
 LABKlCw7Ttv5v0TMEru/xW8Xuwu6e3R05GVzpoApWBKpQczgV1Ww2axkU7h73TnpwJu51kvV63ZvmZ6v
@@ -1098,7 +1098,7 @@ NvItsht8cdmZ1/jiffn/AAAA//9zY7yaKh8AAA==
 		name:    "glsl.js",
 		local:   "assets/js/glsl.js",
 		size:    6514,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/6RZX3PjthF/16dYI+2ZPOtk18mTFDVzcS7Tm95NMnPp9MHyZCASknAmAR4AWnZtfffO
 4g8JiJLtTv1AE4v9h93FD0voSpbsM1dKqknJVlywz7JkGVlXuiJjWLWiMFyKrJBixddjaKjSTF3ZUQ6P
@@ -1142,7 +1142,7 @@ LM9no/8GAAD//4t5QMdyGQAA
 		name:    "helpers.js",
 		local:   "assets/js/helpers.js",
 		size:    3896,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/5RXT2/buBI/S59imj6U8osrO+/wDjF0aV6B10V3u2i620MRGLQ4kolSpEFSTtxuvvti
 SPmPZCfxBjlI4m+Gv/k/TtfcguNrfNd6b/QYKmO/b59X3KL22zchqyo+z4IUVhWWfm7uNdqi4sph/G6s
@@ -1174,7 +1174,7 @@ txJvPRZ27Lutv4flf8bKtp2Zz0DpZ2poMEftdJdmvZdBznnbIiV/rM3JBETbNJtd1rr+CKYWXFle095D
 		name:    "jquery.js",
 		local:   "assets/js/jquery.js",
 		size:    94020,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/8T9a7ujNvYoiL8/n8KocyhU1sZ2Luf8Gm+V/5WqVCfdqSSnK6cvf0xlBMgYG4ML8L7E
 0J9lPst8snm0JIHA3jvpfmaeebG3QeiupaW1ltZl9tKa7P7XiZePk7uF+z8nu0/i2Y2Kw6TRL0WZzLI0
@@ -1741,7 +1741,7 @@ lyHafOYxQBeErcZmKnA0ZbNndH3G7j1MHF797wAAAP//2v/MAURvAQA=
 		name:    "lzma.js",
 		local:   "assets/js/lzma.js",
 		size:    1,
-		modtime: 1566644711,
+		modtime: 1567167345,
 		compressed: `
 H4sIAAAAAAAC/+ICBAAA//+TBtcyAQAAAA==
 `,
